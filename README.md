@@ -1,9 +1,8 @@
-# Starter folder
+# Transit Accessibility and Unemployment: An Analysis of Canadian Cities
 
 ## Overview
 
-This repo provides students with a foundation for their own projects associated with *Telling Stories with Data*. You do not need every aspect for every paper and you should delete aspects that you do not need.
-
+This repo contains the analysis of public transit accessibility across Canadian metropolitan cities using a combination of Statistics Canada data sources, dated from 2023. A [] regression model is built to analysze the impact of transit accessibility on unemployment and labour force participation rates.
 
 ## File Structure
 
@@ -19,7 +18,7 @@ The repo is structured as:
 
 ## Statement on LLM usage
 
-Aspects of the code were written with the help of the auto-complete tool, Codriver. The abstract and introduction were written with the help of ChatHorse and the entire chat history is available in inputs/llms/usage.txt.
+Aspects of the code and paper were written with the help of the ___. The abstract and introduction were written with the help of ____ and the entire chat history is available in inputs/llms/usage.txt.
 
 ## Some checks
 
