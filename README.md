@@ -22,8 +22,8 @@ Aspects of the code and paper were written with the help of the ___. The abstrac
 
 ## Some checks
 
-- [ ] Change the rproj file name so that it's not starter_folder.Rproj
-- [ ] Change the README title so that it's not Starter folder
+- [X] Change the rproj file name so that it's not starter_folder.Rproj
+- [X] Change the README title so that it's not Starter folder
 - [ ] Remove files that you're not using
 - [ ] Update comments in R scripts
 - [ ] Remove this checklist
