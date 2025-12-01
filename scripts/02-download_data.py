@@ -13,16 +13,14 @@
 import pandas as pd
 import os
 
-print("--- DEBUG INFO ---")
-print(f"1. Current working directory: {os.getcwd()}")
 
 #### Download data ####
-raw_data_path = "../data/01-raw_data/public_transport_access.csv"
+raw_data_path = "data/01-raw_data/public_transport_access.csv"
 
 
 #### Save data ####
 public_transport_data = pd.read_csv(raw_data_path)
 
 
-output_path = "../data/01-raw_data/public_transport_access.parquet"
+output_path = "data/01-raw_data/public_transport_access.parquet"
 public_transport_data.to_parquet(output_path, index=False)
