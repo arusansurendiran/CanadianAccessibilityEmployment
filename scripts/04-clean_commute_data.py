@@ -10,55 +10,91 @@
 import pandas as pd
 from utility_functions import print_unique_values, check_id_consistency
 
-#### Workspace setup ####
-import pandas as pd
-
 #### Clean data ####
 
 # Read in the raw data
-parquet_path = "data/01-raw_data/public_transport_access.parquet"
-transit_data = pd.read_parquet(parquet_path)
+parquet_path = "data/01-raw_data/commute_times.parquet"
+commute_data = pd.read_parquet(parquet_path)
 
-# Drop Census Metropolitan Areas (CMAs) with missing values
-# Analysis verified that 1 CMA had no recorded data for public transit access
-missing_mask = transit_data['VALUE'].isna()
-cmas_to_drop = transit_data.loc[missing_mask, 'GEO'].unique()
-transit_data = transit_data[~transit_data['GEO'].isin(cmas_to_drop)].copy()
+transit_data_path = "data/02-analysis_data/clean_transit_data.parquet"
+transit_data = pd.read_parquet(transit_data_path)
+
+print(check_id_consistency(
+    df1=transit_data,
+    df2=commute_data,
+    id_col1="CMA_ID",
+    id_col2="DGUID",
+    name_col1="CMA",
+    name_col2="GEO",
+    label1="Transit Data",
+    label2="Commute Data"))
+
+# There are inconsistencies with Ottawa-Gatineau, Ontario/Quebec (DGUID ‘2021S0503505’) in the commute data.
+# In the transit data, Ottawa-Gatineau is split into two parts: Ontario part (DGUID ‘2021S050535505’) and Quebec part (DGUID ‘2021S050524505’).
+# To resolve this, we will split the Ottawa-Gatineau data in the commute dataset into two separate entries, one for each part.
+
+unified_dguid = '2021S0503505'
+id_quebec_part = '2021S050524505'
+id_ontario_part = '2021S050535505'
+
+
+# Isolate rows for the unified DGUID
+ottawa_unified_rows = commute_data[commute_data['DGUID'] == unified_dguid].copy()
+
+# Split Dataset: Quebec Part
+ottawa_quebec_part = ottawa_unified_rows.copy()
+ottawa_quebec_part['DGUID'] = id_quebec_part
+ottawa_quebec_part['GEO'] = 'Ottawa-Gatineau, Quebec part, Ontario/Quebec'
+
+# Split Dataset 2: Ontario Part
+ottawa_ontario_part = ottawa_unified_rows.copy()
+ottawa_ontario_part['DGUID'] = id_ontario_part
+ottawa_ontario_part['GEO'] = 'Ottawa-Gatineau, Ontario part, Ontario/Quebec'
+
+# Combine the new split datasets ---
+ottawa_split_data = pd.concat([ottawa_quebec_part, ottawa_ontario_part])
+
+# Filter out original unified DGUID rows from the main DataFrame and add the split rows
+commute_data_filter = commute_data[commute_data['DGUID'] != unified_dguid].copy()
+commute_data = pd.concat([commute_data_filter, ottawa_split_data])
+
+
+# Check ID consistency again after adjustments, should show no inconsistencies now
+print(check_id_consistency(
+    df1=transit_data,
+    df2=commute_data,
+    id_col1="CMA_ID",
+    id_col2="DGUID",
+    name_col1="CMA",
+    name_col2="GEO",
+    label1="Transit Data",
+    label2="Commute Data"))
+
 
 # Keep only relevant columns
 relevant_cols = [
     "GEO",
     "DGUID",
-    "Distance-capacity public transit service area",
-    "Demographic and socio-economic",
-    "Sustainable Development Goals (SDGs) 11.2.1 indicator",
-    "UOM",
+    "Main mode of commuting (21)",
+    "Commuting duration (7)",
     "VALUE"
 ]
-transit_data = transit_data[relevant_cols].copy()
+commute_data = commute_data[relevant_cols].copy()
 
-# Rename columns for clarity
-transit_data = transit_data.rename(columns={
+commute_data = commute_data.rename(columns={
     "GEO": "CMA",
     "DGUID": "CMA_ID",
-    "Distance-capacity public transit service area": "Transit_Distance_Category",
-    "Demographic and socio-economic": "Profile_Characteristic",
-    "Sustainable Development Goals (SDGs) 11.2.1 indicator": "Population_Measure",
-    "UOM": "Population_Measure_Unit",
-    "VALUE": "Population_Value"
+    "Main mode of commuting (21)": "Commute_Mode",
+    "Commuting duration (7)": "Average_Commute_Duration",
+    "VALUE": "Commute_Value"
 })
 
-
-# Change the values in 'CMA' by remove ", Census metropolitan area (CMA)" to make it cleaner
-transit_data['CMA'] = transit_data['CMA'].str.replace(", Census metropolitan area (CMA)", "", regex=False)
-
 # Create a copy of the cleaned data to be saved
-clean_transit_data = transit_data.copy()
-
+clean_commute_data = transit_data.copy()
 
 #### Save data ####
-csv_path = "data/02-analysis_data/clean_transit_data.csv"
-parquet_path = "data/02-analysis_data/clean_transit_data.parquet"
+csv_path = "data/02-analysis_data/clean_commute_data.csv"
+parquet_path = "data/02-analysis_data/clean_commute_data.parquet"
 
-clean_transit_data.to_csv(csv_path, index=False)
-clean_transit_data.to_parquet(parquet_path)
+clean_commute_data.to_csv(csv_path, index=False)
+clean_commute_data.to_parquet(parquet_path)
