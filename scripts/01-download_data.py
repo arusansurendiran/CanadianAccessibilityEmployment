@@ -16,8 +16,8 @@ import os
 
 #### Download data ####
 raw_transit_path = "data/01-raw_data/public_transport_access.csv"
-raw_labour_path = "data/01-raw_data/labour_rates2.csv"
-raw_commute_path = "data/01-raw_data/commute_times.csv"
+raw_labour_path = "data/01-raw_data/labour_rates1.csv"
+raw_commute_path = "data/01-raw_data/commute_times1.csv"
 
 
 #### Save data ####
