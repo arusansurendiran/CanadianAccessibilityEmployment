@@ -1,8 +1,8 @@
-# Transit Accessibility and Unemployment: An Analysis of Canadian Cities
+# An Analysis of Public Transit Access and Labour Force Outcomes across Canadian Cities, 2023 and 2024
 
 ## Overview
 
-This repo contains the analysis of public transit accessibility across Canadian metropolitan cities using a combination of Statistics Canada data sources, dated from 2023. A [] regression model is built to analysze the impact of transit accessibility on unemployment and labour force participation rates.
+This paper contains the analysis of public transit accessibility across Canadian metropolitan cities using a combination of Statistics Canada data sources, dated from 2023. A multiple linear regression model is built to analysze the impact of transit accessibility on unemployment and labour force participation rates.
 
 ## File Structure
 
@@ -19,11 +19,3 @@ The repo is structured as:
 ## Statement on LLM usage
 
 Aspects of the code and paper were written with the help of the ___. The abstract and introduction were written with the help of ____ and the entire chat history is available in inputs/llms/usage.txt.
-
-## Some checks
-
-- [X] Change the rproj file name so that it's not starter_folder.Rproj
-- [X] Change the README title so that it's not Starter folder
-- [ ] Remove files that you're not using
-- [ ] Update comments in R scripts
-- [ ] Remove this checklist
