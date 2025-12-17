@@ -1,10 +1,10 @@
 #### Preamble ####
 # Purpose: Cleans the raw public transit data recorded by Statistics Canada
 # Author: Arusan Surendiran
-# Date: 
+# Date:
 # Contact: arusan.surendiran@utoronto.ca
 # License: MIT
-# Pre-requisites: None
+# Pre-requisites: 01-download_data.py
 
 #### Workspace setup ####
 import pandas as pd
@@ -51,7 +51,8 @@ transit_data = transit_data.rename(columns={
 })
 
 # Change the values in 'CMA' by removing the string ", Census metropolitan area (CMA)" to make it cleaner
-transit_data['CMA'] = transit_data['CMA'].str.replace(", Census metropolitan area (CMA)", "", regex=False)
+transit_data['CMA'] = transit_data['CMA'].str.replace(
+    ", Census metropolitan area (CMA)", "", regex=False)
 
 # Create a copy of the cleaned data to be saved
 clean_transit_data = transit_data.copy()
@@ -63,4 +64,4 @@ parquet_path = "data/02-analysis_data/clean_transit_data.parquet"
 clean_transit_data.to_csv(csv_path, index=False)
 clean_transit_data.to_parquet(parquet_path)
 
-#print_unique_values(clean_transit_data)
+# print_unique_values(clean_transit_data)

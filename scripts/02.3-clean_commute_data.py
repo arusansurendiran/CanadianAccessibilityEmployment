@@ -1,7 +1,7 @@
 #### Preamble ####
-# Purpose: Cleans the raw labour rates and characteristics recorded by Statistics Canada
+# Purpose: Cleans the raw labour statistics recorded by Statistics Canada
 # Author: Arusan Surendiran
-# Date: 
+# Date:
 # Contact: arusan.surendiran@utoronto.ca
 # License: MIT
 # Pre-requisites: 03-clean_transit_data.py
@@ -29,9 +29,11 @@ print(check_id_consistency(
     label1="Transit Data",
     label2="Commute Data"))
 
-# There are inconsistencies with Ottawa-Gatineau, Ontario/Quebec (DGUID ‘2021S0503505’) in the commute data.
-# In the transit data, Ottawa-Gatineau is split into two parts: Ontario part (DGUID ‘2021S050535505’) and Quebec part (DGUID ‘2021S050524505’).
-# To resolve this, we will split the Ottawa-Gatineau data in the commute dataset into two separate entries, one for each part.
+# There are inconsistencies with Ottawa-Gatineau, Ontario/Quebec (DGUID
+# ‘2021S0503505’) in the commute data. In the transit data, Ottawa-Gatineau is
+# split into two parts: Ontario part (DGUID ‘2021S050535505’) and Quebec part
+# (DGUID ‘2021S050524505’). To resolve this, we will split the Ottawa-Gatineau
+# data in the commute dataset into two separate entries, one for each part.
 
 unified_dguid = '2021S0503505'
 id_quebec_part = '2021S050524505'
@@ -39,7 +41,8 @@ id_ontario_part = '2021S050535505'
 
 
 # Isolate rows for the unified DGUID
-ottawa_unified_rows = commute_data[commute_data['DGUID'] == unified_dguid].copy()
+ottawa_unified_rows = commute_data[commute_data['DGUID']
+                                   == unified_dguid].copy()
 
 # Split Dataset: Quebec Part
 ottawa_quebec_part = ottawa_unified_rows.copy()
@@ -55,11 +58,12 @@ ottawa_ontario_part['GEO'] = 'Ottawa-Gatineau, Ontario part, Ontario/Quebec'
 ottawa_split_data = pd.concat([ottawa_quebec_part, ottawa_ontario_part])
 
 # Filter out original unified DGUID rows from the main DataFrame and add the split rows
-commute_data_filter = commute_data[commute_data['DGUID'] != unified_dguid].copy()
+commute_data_filter = commute_data[commute_data['DGUID']
+                                   != unified_dguid].copy()
 commute_data = pd.concat([commute_data_filter, ottawa_split_data])
 
 
-# Check ID consistency again after adjustments, should show no inconsistencies now
+# Check ID consistency again, should show no inconsistencies now
 print(check_id_consistency(
     df1=transit_data,
     df2=commute_data,
@@ -90,7 +94,7 @@ commute_data = commute_data.rename(columns={
 })
 
 # Create a copy of the cleaned data to be saved
-clean_commute_data = transit_data.copy()
+clean_commute_data = commute_data.copy()
 
 #### Save data ####
 csv_path = "data/02-analysis_data/clean_commute_data.csv"

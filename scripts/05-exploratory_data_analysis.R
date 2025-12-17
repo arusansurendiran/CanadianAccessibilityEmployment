@@ -1,37 +1,52 @@
 #### Preamble ####
-# Purpose: Models... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 11 February 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Exploratory data analysis for transportation and accessibility data
+# Author: Arusan Surendiran
+# Date:
+# Contact: arusan.surendiran@utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
 
 
 #### Workspace setup ####
 library(tidyverse)
-library(rstanarm)
+library(arrow)
 
 #### Read data ####
-analysis_data <- read_csv("data/analysis_data/analysis_data.csv")
+model_data <- read_parquet("data/02-analysis_data/analysis_data.parquet")
 
-### Model data ####
-first_model <-
-  stan_glm(
-    formula = flying_time ~ length + width,
-    data = analysis_data,
-    family = gaussian(),
-    prior = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    prior_intercept = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    prior_aux = exponential(rate = 1, autoscale = TRUE),
-    seed = 853
-  )
+# Regression Model for Participation Rates: Year 2024
 
+formula_final <- Participationrate2024 ~ Col_15to64years2024 +
+  Transit_Penalty + Log_Pop_2024
+
+participation_model_2024 <- lm(
+  formula = formula_final,
+  data = model_data
+)
+
+cat("REGRESSION MODEL: YEAR 2024\n")
+print(summary(participation_model_2024))
 
 #### Save model ####
 saveRDS(
-  first_model,
-  file = "models/first_model.rds"
+  participation_model_2024,
+  file = "models/participation_model_2024.rds"
 )
 
+# Regression Model for Participation Rates: Year 2023
 
+formula_final <- Participationrate2023 ~ Col_15to64years2023 +
+  Transit_Penalty + Log_Pop_2023
+
+participation_model_2023 <- lm(
+  formula = formula_final,
+  data = model_data
+)
+
+cat("REGRESSION MODEL: YEAR 2023\n")
+print(summary(participation_model_2023))
+
+#### Save model ####
+saveRDS(
+  participation_model_2023,
+  file = "models/participation_model_2023.rds"
+)
