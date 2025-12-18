@@ -17,20 +17,28 @@ bibliography: references.bib
 #| message: false
 
 library(tidyverse)
-library(palmerpenguins)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
 ```
+
+
 
 # Introduction
 
-Overview paragraph
+Public transit represents a significant foundation of any major metropolitan economy, enabling the
+efficient movement of residents on a daily basis. In 2024, the Canadian federal government announced an investment of over $3 billion into transit infrastructure, highlighting the growing need to build sustainable and transit-oriented cities across the nation. While these systems aim to provide reliable mobility, the impact of public transit is expansive. Benefits range from improved quality of life, environmental sustainability and the inclusion of underserved populations. (Foth, N., Manaugh, K., & El-Geneidy, A. M. (2013).  This commitment is also seen through Canada’s 2030 Agenda for Sustainable Development, specifically Goal 11, which mandates the creation of "inclusive, safe, resilient and sustainable" cities (Government of Canada, 2022). Among several indicators for Goal 11, Statistics Canada measures Canadians’ transit proximity, emphasizing that transit is a core requirement for a modern economy.
 
-Estimand paragraph
+To understand the vitality of public transit systems, we explore their economic value in major metropolitan areas. Previous literature has explored these relationships in varying degrees. Transportation infrastructure has shown to be a driver of employment growth, expanding the ability of people to engage in the workforce (Sobieralski, 2021). Chatman and Noland (2011) reveal that efficient transit enlarges the pool of accessible jobs, enabling economic productivity in dense urban populations. Research has found that poor transit accessibility, combined with socioeconomic disadvantages, results in "transport poverty." This can create a tangible barrier to economic participation, effectively reducing the labour market for residents without reliable access to transit. (Allen and Farber (2019, Jin et al., 2025). In Canada’s largest municipality, Deboosere et al. (2018) found that transit accessibility improvements in Toronto were associated with increases in median household income and decreases in unemployment. As transportation networks develop through substantial investment and population patterns shift, this allows us to question how public transit accessibility relates to the economic impact on Canada’s workforce. 
 
-Results paragraph
+This paper investigates the relationship between public transit accessibility and labour market outcomes across 41 Canadian Census Metropolitan Areas (CMAs). By retrieving Statistics Canada data from 2023 and 2024, we analyze four key variables: the proportion of the working-age population (ages 15 to 64) with access to a nearby transit stop, the ratio of average transit to private vehicle commute times, total population size, and our estimand of interest, labour force participation rates. We then use a linear mixed effects model to evaluate the association between public transit and specific outcomes of the Canadian labour market: labour force participation rates. The mixed linear model appropriately allowed us to capture the average effects of the transit accessibility and demographic variables while handling the unique baseline differences across 41 CMAs.
 
-Why it matters paragraph
+The results indicate that the measures for transit accessibility are significantly associated with participation rates. For every one-unit increase in the percentage of working-age Canadians (15 to 64 years old) with transit access, participation rates rose. This suggestions physical proximity to a transit stop can be a key component for healthy labour force participation. Interestingly, the transit commute time relative to private vehicle time positively correlates with participation rates. This suggests that in dense urban centres, workforce engagement remains high despite the time-intensive commute on transit. Although not necessarily a proponent for transit, this may reflect that productive labour markets occur in larger and more densely populated municipalities. Ultimately, our findings suggest that workforce participation is highest in regions where transit is most accessible and heavily utilized. Transit investment points towards being more than just a sustainability initiative, showing its role in economic growth by enabling our labour force 
 
-Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
+In the following Data Section 2, the Census Metropolitan Areas (CMAs) and it’s characteristics are described, with overviews of the datasets selected to begin our analysis (Statistics Canda 2021, 2023-2024). The Models Section 3 outlines the linear mixed effects model used to estimate the effect of transit accessibility on labour force participation rates. It is followed by a review of the model results in the Results Section 4. Finally, in the Discussion Section 5, we summarize the results and limitations of this analysis.
+
+Statistical programming language R [@citeR] is used in this report, with packages tidyverse (Wickham et al. 2019), here (Müller 2020), ggplot2 (Wickham 2016), knitr (Xie 2014), tibble (Müller and Wickham 2023), and kableExtra (Zhu 2021). Python (Python Software Foundation 2024) was utilized, with packages pandas (The pandas development team 2024), matplotlib (Hunter 2007), seaborn (Waskom 2021), statsmodels (Seabold and Perktold 2010), and pyarrow (Apache Software Foundation 2024).
+
 
 # Data {#sec-data}
 
