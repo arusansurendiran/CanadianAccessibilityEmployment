@@ -11,3 +11,4 @@ __pycache__/
 *_files/
 *.out
 *.toc
+.Rproj.user

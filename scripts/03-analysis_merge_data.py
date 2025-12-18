@@ -43,14 +43,10 @@ transit_filter = transit_data[
 
 transit_pivot = transit_filter.pivot_table(
     # Keep Year and Distance for more detail
-    index=['CMA_ID', 'Transit_Distance_Category'],
-    columns=['Transit_Profile_Characteristic', 'Year'],
+    index=['CMA_ID', 'Transit_Distance_Category', 'Year'],
+    columns=['Transit_Profile_Characteristic'],
     values='Transit_Value'
 ).reset_index()
-
-# Clean Column Names
-transit_pivot.columns = [''.join(map(str, col)).strip()
-                         for col in transit_pivot.columns.values]
 
 
 # LABOUR DATA
@@ -84,14 +80,14 @@ labour_aggregated = labour_filter.groupby(['CMA_ID', 'Labour_Metric', 'Year']).a
     Aggregated_Value=('Labour_Value', 'mean')
 ).reset_index()
 
+# Ensure Year is integer for proper pivoting with transit data
+labour_aggregated['Year'] = labour_aggregated['Year'].astype(int)
+
 labour_pivot = labour_aggregated.pivot_table(
-    index=['CMA_ID'],
-    columns=['Labour_Metric', 'Year'],
+    index=['CMA_ID', 'Year'],
+    columns=['Labour_Metric'],
     values='Aggregated_Value'
 ).reset_index()
-
-labour_pivot.columns = [''.join(map(str, col)).strip()
-                        for col in labour_pivot.columns.values]
 
 
 # COMMUTE DATA
@@ -134,7 +130,7 @@ first_merge = pd.merge(
 second_merge = pd.merge(
     first_merge,
     labour_pivot,
-    on='CMA_ID',
+    on=['CMA_ID', 'Year'],
     how='left'
 )
 
@@ -173,12 +169,10 @@ analysis_data.columns = [
 # Create new variables for analysis
 
 # 1. Log of population (in thousands) for better scaling
-analysis_data['Log_Pop_2023'] = np.log(analysis_data['Population2023'])
-analysis_data['Log_Pop_2024'] = np.log(analysis_data['Population2024'])
+analysis_data['Log_Pop'] = np.log(analysis_data['Population'])
 
 # 2. Transit Penalty Variable: Difference in average commute times between public transit and car/truck/van
-analysis_data['Transit_Penalty'] = analysis_data['Commute_Avg_Publictransit'] - \
-    analysis_data['Commute_Avg_Cartruckorvan']
+analysis_data['Transit_Penalty'] = analysis_data['Commute_Avg_Publictransit'] - analysis_data['Commute_Avg_Cartruckorvan']
 
 
 print("Final analysis_data columns:")
