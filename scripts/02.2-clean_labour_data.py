@@ -1,10 +1,10 @@
 #### Preamble ####
-# Purpose: Cleans the raw labour rates and characteristics recorded by Statistics Canada
+# Purpose: Clean the raw labour rates and characteristics recorded by Statistics Canada
 # Author: Arusan Surendiran
-# Date:
+# Date: 25 December 2025
 # Contact: arusan.surendiran@utoronto.ca
 # License: MIT
-# Pre-requisites: 02-clean_transit_data.py
+# Pre-requisites: 02.1-clean_transit_data.py
 
 #### Workspace setup ####
 import pandas as pd
@@ -30,16 +30,13 @@ print(check_id_consistency(
     label1="Transit Data",
     label2="Labour Data"))
 
-# To ensure consistency between datasets, we identified that the DGUID ‘2021S05031’ in the labour data corresponded to
-# St. John’s, matching the CMA_ID ‘2021S0503001’ in the transit data. Based on this partial match in city names, we
-# manually replaced the DGUID in the labour data to enable accurate merging.
+# To ensure consistency between datasets, we identified that the DGUID ‘2021S05031’ in the labour data corresponded to St. John’s, matching the CMA_ID ‘2021S0503001’ in the transit data. Based on this partial match in city names, we manually replaced the DGUID in the labour data to enable accurate merging.
 
 labour_data['DGUID'] = labour_data['DGUID'].replace(
     '2021S05031', '2021S0503001')
 
 # No data was found for Saguenay, Quebec (DGUID ‘2021S0503408’) in the transit dataset, so this city was excluded.
-# For Ottawa-Gatineau, Ontario/Quebec (DGUID ‘2021S0503505’), the city is split into Ontario and Quebec parts in
-# the transit data, which are already represented as separate entries; therefore, the combined DGUID was not used.
+# For Ottawa-Gatineau, Ontario/Quebec (DGUID ‘2021S0503505’), the city is split into Ontario and Quebec parts in the transit data, which are already represented as separate entries; therefore, the combined DGUID was not used.
 
 to_drop = ['2021S0503408', '2021S0503505']
 labour_data = labour_data[~labour_data['DGUID'].isin(to_drop)].copy()
@@ -82,8 +79,6 @@ clean_labour_data['Year'] = clean_labour_data['Time_Period'].str.split(
     '-').str[0]
 
 #### Save data ####
-csv_path = "data/02-analysis_data/clean_labour_data.csv"
-parquet_path = "data/02-analysis_data/clean_labour_data.parquet"
 
-clean_labour_data.to_csv(csv_path, index=False)
+parquet_path = "data/02-analysis_data/clean_labour_data.parquet"
 clean_labour_data.to_parquet(parquet_path)

@@ -1,7 +1,7 @@
 #### Preamble ####
-# Purpose: Cleans the raw public transit data recorded by Statistics Canada
+# Purpose: Clean the raw public transit data recorded by Statistics Canada
 # Author: Arusan Surendiran
-# Date:
+# Date: 25 December 2025
 # Contact: arusan.surendiran@utoronto.ca
 # License: MIT
 # Pre-requisites: 01-download_data.py
@@ -58,10 +58,8 @@ transit_data['CMA'] = transit_data['CMA'].str.replace(
 clean_transit_data = transit_data.copy()
 
 #### Save data ####
-csv_path = "data/02-analysis_data/clean_transit_data.csv"
-parquet_path = "data/02-analysis_data/clean_transit_data.parquet"
 
-clean_transit_data.to_csv(csv_path, index=False)
+parquet_path = "data/02-analysis_data/clean_transit_data.parquet"
 clean_transit_data.to_parquet(parquet_path)
 
-# print_unique_values(clean_transit_data)
+print_unique_values(clean_transit_data)

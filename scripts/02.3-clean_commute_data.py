@@ -1,10 +1,10 @@
 #### Preamble ####
-# Purpose: Cleans the raw labour statistics recorded by Statistics Canada
+# Purpose: Clean the commuting duration statistics recorded by Statistics Canada
 # Author: Arusan Surendiran
-# Date:
+# Date: 25 December 2025
 # Contact: arusan.surendiran@utoronto.ca
 # License: MIT
-# Pre-requisites: 03-clean_transit_data.py
+# Pre-requisites: 02.2_clean_labour_data.py
 
 #### Workspace setup ####
 import pandas as pd
@@ -29,11 +29,7 @@ print(check_id_consistency(
     label1="Transit Data",
     label2="Commute Data"))
 
-# There are inconsistencies with Ottawa-Gatineau, Ontario/Quebec (DGUID
-# ‘2021S0503505’) in the commute data. In the transit data, Ottawa-Gatineau is
-# split into two parts: Ontario part (DGUID ‘2021S050535505’) and Quebec part
-# (DGUID ‘2021S050524505’). To resolve this, we will split the Ottawa-Gatineau
-# data in the commute dataset into two separate entries, one for each part.
+# There are inconsistencies with Ottawa-Gatineau, Ontario/Quebec (DGUID ‘2021S0503505’) in the commute data. In the transit data, Ottawa-Gatineau is split into two parts: Ontario part (DGUID ‘2021S050535505’) and Quebec part(DGUID ‘2021S050524505’). To resolve this, we will split the Ottawa-Gatineau data in the commute dataset into two separate entries, one for each part.
 
 unified_dguid = '2021S0503505'
 id_quebec_part = '2021S050524505'
@@ -83,9 +79,9 @@ relevant_cols = [
     "Commuting duration (7)",
     "VALUE"
 ]
-commute_data = commute_data[relevant_cols].copy()
+clean_commute_data = commute_data[relevant_cols].copy()
 
-commute_data = commute_data.rename(columns={
+clean_commute_data = clean_commute_data.rename(columns={
     "GEO": "CMA",
     "DGUID": "CMA_ID",
     "Main mode of commuting (21)": "Commute_Mode",
@@ -93,12 +89,8 @@ commute_data = commute_data.rename(columns={
     "VALUE": "Commute_Value"
 })
 
-# Create a copy of the cleaned data to be saved
-clean_commute_data = commute_data.copy()
 
 #### Save data ####
-csv_path = "data/02-analysis_data/clean_commute_data.csv"
-parquet_path = "data/02-analysis_data/clean_commute_data.parquet"
 
-clean_commute_data.to_csv(csv_path, index=False)
+parquet_path = "data/02-analysis_data/clean_commute_data.parquet"
 clean_commute_data.to_parquet(parquet_path)

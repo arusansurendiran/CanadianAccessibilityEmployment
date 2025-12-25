@@ -1,11 +1,11 @@
 #### Preamble ####
-# Purpose: Downloads and saves the data from Statistics Canada as a parquet
+# Purpose: Saves Statistics Canada CSV datasets as Parquet files for access
 # Author: Arusan Surendiran
-# Date: 1 December 2025
+# Date: 25 December 2025
 # Contact: arusan.surendiran@utoronto.ca
 # License: MIT
-# Pre-requisites: Download the Public Transit and Unemployment data from Statistics Canada
-# The data was retrieved from the following links on 1 December 2025:
+# Pre-requisites: None
+# The data was retrieved as .csv files from the following links on 1 December 2025:
 
 # Public Transit Access:
 # https://www150.statcan.gc.ca/t1/tbl1/en/cv!recreate.action?pid=2310031301&selectedNodeIds=1D14,1D94,1D122,1D154,1D170,1D197,1D223,1D317,1D334,1D372,1D394,1D411,1D470,1D474,1D479,1D498,1D504,1D508,1D518,1D523,1D530,1D555,1D559,1D572,1D595,1D608,1D621,1D648,1D689,1D726,1D746,1D784,1D798,1D835,1D847,1D865,1D878,1D933,1D943,1D963,1D1054,1D1100,2D1,2D2,2D3,2D4,3D1,4D1,5D1,5D2,5D3,5D6,5D56,5D57,5D58,5D59,5D60&checkedLevels=5D1&refPeriods=20230101,20240101&dimensionLayouts=layout3,layout2,layout2,layout2,layout2,layout2,layout2&vectorDisplay=false
@@ -34,6 +34,7 @@ labour_data = pd.read_csv(raw_labour_path)
 commute_data = pd.read_csv(raw_commute_path)
 
 
+### Save as Parquet files ###
 transit_path = "data/01-raw_data/public_transport_access.parquet"
 labour_path = "data/01-raw_data/labour_rates.parquet"
 commute_path = "data/01-raw_data/commute_times.parquet"
