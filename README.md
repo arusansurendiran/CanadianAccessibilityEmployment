@@ -28,14 +28,17 @@ The repo is structured as:
 
 To acesss this project, clone this repo or download as a ZIP file. Move the downloaded folder to where you want to work on your own computer.
 
-Run scripts/00-utility_functions.py to set up utility functions.
-Run scripts/01-download_data.py to download the raw dataset.
-Run three scripts/02.x-clean_xxx_data.py to clean datasets.
-Run scripts/03-analysis_data.py to summarize the datasets for the model.
-Run scripts/04-test_data.py to validate the cleaned data.
-Run scripts/05-install_packages.R to install required R packages.
-Run scripts/06_model_data.R to model the data
-Run outputs/canadian-transit-labour-analysis.qmd and render to generate the PDF of this paper.
+Using Python:
+- Run scripts/00-utility_functions.py to set up utility functions.
+- Run scripts/01-download_data.py to download the raw dataset.
+- Run three scripts/02.x-clean_xxx_data.py to clean datasets.
+- Run scripts/03-analysis_data.py to summarize the datasets for the model.
+- Run scripts/04-test_data.py to validate the cleaned data.
+
+Using R:
+- Run scripts/05-install_packages.R to install required R packages.
+- Run scripts/06_model_data.R to model the data
+- Run outputs/canadian-transit-labour-analysis.qmd and render to generate the PDF of this paper.
 
 ## Statement on LLM usage
 
