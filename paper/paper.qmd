@@ -12,17 +12,38 @@ bibliography: references.bib
 ---
 
 ```{r}
+#| label: setup
 #| include: false
 #| warning: false
 #| message: false
 
 library(tidyverse)
+library(arrow)
+library(dplyr)
 library(ggplot2)
 library(knitr)
 library(kableExtra)
+library(showtext)
+library(here)
+library(ggrepel)
+library(patchwork)
 ```
 
+```{r}
+#| label: load_data
+#| include: false
 
+font_add(
+  family  = "lmroman", 
+  regular = here::here("other/fonts/lmroman10-regular.otf"),
+  bold    = here::here("other/fonts/lmroman10-bold.otf"),
+  italic  = here::here("other/fonts/lmroman10-italic.otf")
+)
+
+showtext_auto()
+
+analysis_data <- read_parquet(here::here("data/02-analysis_data/analysis_data.parquet"))
+```
 
 # Introduction
 
@@ -44,7 +65,7 @@ Statistical programming language R [@citeR] is used in this report, with package
 
 ## Overview
 
-We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
+We use the statistical programming language R [@citeR].... Our data [@SobieralskiJosephB.2021Tiae].... Following @tellingstories, we consider...
 
 Overview text
 
@@ -59,18 +80,42 @@ Add graphs, tables and text. Use sub-sub-headings for each outcome variable or u
 Some of our data is of penguins (@fig-bills), from @palmerpenguins.
 
 ```{r}
-#| label: fig-bills
+#| label: fig-bills1
 #| fig-cap: Bills of penguins
 #| echo: false
-#| 
+#| message: false
+#| warning: false
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+# Labels the 2 largest Canadian CMAs
+label_data <- analysis_data %>%
+  group_by(Year) %>%
+  slice_max(order_by = Population, n = 2) %>%
+  ungroup()
+
+plot_transit_vs_labour <- ggplot(analysis_data, 
+       aes(x = Transit_Access_Prop, y = Participation_Rate)) +
+  geom_point(aes(size = Population), alpha = 0.6, color = "steelblue") + 
+  geom_smooth(method = "lm", se = FALSE, color = "maroon", linewidth = 0.5) +
+  geom_text_repel(data = label_data, 
+                  aes(label = CMA_Name),
+                  size = 3,
+                  show.legend = FALSE,
+                  box.padding = 1) + 
+  labs(title = "Relationship between Transit Access & Labour Participation Rates",
+       x = "Proportion of 15-64 Population with Transit Access (%)",
+       y = "Labour Force Participation Rate (%)") +
+  scale_size(
+    name = "CMA Population (in Millions)", 
+    breaks = c(1000, 3000, 5000),
+    labels = function(x) x / 1000) +
+  facet_wrap(~Year) +
+  theme_minimal(base_family = "lmroman") +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 11),
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold")
+  ) 
+plot_transit_vs_labour
 ```
 
 Talk more about it.

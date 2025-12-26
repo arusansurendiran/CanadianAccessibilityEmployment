@@ -57,6 +57,17 @@ else:
     all_tests_passed = False
 
 
+# 4. Check the number of unique CMAs
+expected_cma_count = 41
+actual_cma_count = analysis_data["CMA_Name"].nunique()
+if actual_cma_count == expected_cma_count:
+    print(f"Correct number of CMAs: {actual_cma_count}")
+else:
+    print(f"FAIL: Expected {expected_cma_count} CMAs, found {actual_cma_count}")
+    all_tests_passed = False
+
+
+# Final Test Result
 if all_tests_passed:
     print("PASS: All tests passed.")
 else:
