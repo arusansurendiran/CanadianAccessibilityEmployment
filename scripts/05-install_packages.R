@@ -11,7 +11,19 @@ packages <- c(
   "tidyverse",
   "arrow",
   "lme4",
-  "lmerTest"
+  "lmerTest",
+  "here",
+  "car",
+  "ggplot2",
+  "ggrepel",
+  "patchwork",
+  "gridExtra",
+  "kableExtra",
+  "modelsummary",
+  "sjPlot",
+  "sysfonts",
+  "showtext",
+  "knitr"
 )
 
 # Install packages if they are not already installed
