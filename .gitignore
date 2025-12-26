@@ -1,14 +1,5 @@
 .DS_Store
 .venv/
-data/
 *.pyc
 __pycache__/
-
-# LaTeX/Quarto temporary files
-*.log
-*.aux
-*.tex
-*_files/
-*.out
-*.toc
 .Rproj.user
