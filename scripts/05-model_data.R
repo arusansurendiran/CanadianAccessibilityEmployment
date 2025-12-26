@@ -34,4 +34,3 @@ saveRDS(
   participation_model,
   file = "models/participation_model.rds"
 )
-)
