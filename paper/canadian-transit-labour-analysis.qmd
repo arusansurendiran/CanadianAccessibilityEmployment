@@ -1,0 +1,723 @@
+---
+title: "An Analysis of Public Transit Accessibility on Labour Force Outcomes across Major Canadian Cities from 2023-2024"
+author: Arusan Surendiran
+thanks: "Code and data are available at: [https://github.com/arusansurendiran/CanadianAccessibilityEmployment.git](https://github.com/arusansurendiran/CanadianAccessibilityEmployment.git)."
+date: today
+date-format: long
+abstract: "This paper addresses the relationship between public transit accessibility and labour force participation rates across 41 Canadian metropolitan areas. Using a linear mixed-effects model to account for city-specific differences, the study analyzes the impact of transit proximity, population size, and relative commute times in 2023 and 2024. The results show a statistically significant positive association between transit access and labour participation. Interestingly, long transit commutes were positively correlated with higher participation, suggesting that densely populated areas thrive economically. While confounding effects prevent establishing causality, the evidence supports positive, measurable socioeconomic impacts of public transportation."
+format: pdf
+number-sections: true
+number-depth: 3
+toc: true
+header-includes:
+  - \usepackage{float}
+  - \floatplacement{table}{H}
+  - \floatplacement{figure}{H}
+bibliography: references.bib
+---
+
+```{r}
+#| label: setup
+#| include: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(arrow)
+library(lme4)
+library(lmerTest)
+library(here)
+library(car)
+library(ggplot2)
+library(ggrepel)
+library(patchwork)
+library(gridExtra)
+library(kableExtra)
+library(modelsummary)
+library(sjPlot)
+library(sysfonts)
+library(showtext)
+library(knitr)
+
+showtext_auto()
+font_add(family = "lmroman", 
+         regular = here("other/fonts/lmroman10-regular.otf"),
+         bold = here("other/fonts/lmroman10-bold.otf"))
+```
+
+
+```{r}
+#| label: load_data_model
+#| include: false
+#| warning: false
+#| message: false
+
+analysis_data <- read_parquet(here("data/02-analysis_data/analysis_data.parquet"))
+participation_model <- readRDS(here("models/participation_model.rds"))
+```
+
+
+```{r}
+#| label: prepare_data
+#| include: false
+#| warning: false
+#| message: false
+
+# For Summary Statistics
+table_data <- analysis_data |>
+  select(
+    Year,
+    `Participation Rate (%)` = Participation_Rate,
+    `Transit Access (%)` = Transit_Access_Prop,
+    `Commute by Car (mins)` = Avg_Commute_Car,
+    `Commute by Transit (mins)` = Avg_Commute_Transit,
+    `Commute Ratio` = Commute_Ratio,
+    `Population (in thousands)` = Population
+  )
+
+# For Faceting by Year
+analysis_data$Year <- as.factor(analysis_data$Year)
+
+# Split datasets by 2023 and 2024
+analysis_data_2024 <- analysis_data |> filter(Year == 2024)
+analysis_data_2023 <- analysis_data |> filter(Year == 2023)
+```
+
+{{< pagebreak >}}
+
+# Introduction
+
+Public transit is an important foundation of any major metropolitan economy, enabling the efficient movement of residents on a daily basis. In 2024, the Canadian federal government announced an investment of over \$3 billion in transit infrastructure, highlighting the need to build sustainable, transit-oriented cities across the country. While these systems aim to provide reliable transport, the impact of public transit is expansive. Benefits range from improved quality of life, environmental sustainability and the inclusion of underserved populations [@foth2013equitable]. This commitment is also seen through Canada’s 2030 Agenda for Sustainable Development, specifically Goal 11, which mandates the creation of "inclusive, safe, resilient and sustainable" cities [@2021canada]. Among several indicators for Goal 11, Statistics Canada measures Canadians’ proximity to transit, emphasizing that transit is a core requirement for a modern economy.
+
+To understand the importance of public transit systems, we explore their economic value in major metropolitan areas. Previous literature explored these relationships in varying degrees. Transportation infrastructure has been shown to drive employment growth, expanding people's ability to participate in the workforce [@sobieralski2021transportation]. @chatman2011public shows that efficient transit expands the pool of accessible jobs, enabling economic productivity in dense urban areas. Research has found that poor transit accessibility, combined with socioeconomic disadvantages, results in "transport poverty." This can create a tangible barrier to economic participation, effectively reducing the labour market for residents without reliable access to transit [@allen2019sizing, @jin2025revealing]. In Canada’s largest municipality, @deboosere2018evaluating found that transit accessibility improvements in Toronto were associated with higher median household income and lower unemployment. As transportation networks develop through substantial investment and population patterns shift, we can question how public transit accessibility relates to the economic impact on Canada’s workforce.
+
+This paper investigates the relationship between public transit accessibility and labour market outcomes across 41 Canadian Census Metropolitan Areas (CMAs). By retrieving Statistics Canada data from 2023 and 2024, we analyze four key variables: the proportion of the working-age population (ages 15 to 64) with access to a nearby transit stop, the ratio of average transit to private vehicle commute times, total population size, and our primary outcome variable, labour force participation rates.
+
+Labour force participation in Canadian metropolitan areas is our estimand of interest. By quantifying transit accessibility and isolating its relationship from potential confounders, such as city size and commute efficiency, we aim to discover how physical access to public transit networks is associated with higher labour market participation. We then use a linear mixed-effects model to evaluate the association between public transit and specific outcomes in the Canadian labour market: labour force participation rates. The linear mixed model appropriately captured the average effects of transit accessibility and demographic variables while accounting for unique baseline differences across 41 CMAs.
+
+The results indicate that transit accessibility measures are significantly associated with participation rates. For every one-unit increase in the percentage of working-age Canadians (15 to 64 years old) with transit access, participation rates rose. This suggests that physical proximity to a transit stop can be a key component for healthy labour force participation. An unexpected finding was that long commute times on transit relative to private vehicles positively correlated with participation rates. This suggests that in dense urban centres, workforce engagement remains high despite the time-intensive transit commute. Although not necessarily a proponent of transit, this may reflect the fact that productive labour markets occur in larger, more densely populated municipalities. Ultimately, our findings suggest that workforce participation is highest in regions where transit is highly accessible and utilized. Transit investment signals a role beyond a sustainability initiative, demonstrating its role in economic growth by supporting the labour force.
+
+In the following Data Section 2, the Census Metropolitan Areas (CMAs) and their characteristics are described, along with an overview of the datasets selected for our analysis (Statistics Canada, 2021, 2023-2024). Section 3 of the Models outlines the linear mixed-effects model used to estimate the effect of transit accessibility on labour force participation rates. Section 4 follows with a review of the model results. Finally, in the Discussion Section 5, we summarize the results and limitations of this analysis.
+
+Programming language Python [@citePython] is utilized for data processing, with packages pandas [@citePandas] and numpy [@citeNumPy]. Statistical programming language R [@citeR] is used in this report for analysis, with packages tidyverse [@tidyverse], arrow [@arrow], lme4 [@lme4], lmerTest [@lmerTest], here [@here], ggplot2 [@R-ggplot2], kableExtra [@kableExtra], patchwork [@patchwork], ggrepel [@ggrepel], gridExtra [@R-gridExtra], knitr [@R-knitr], car [@car], modelsummary [@modelsummary], showtext [@R-showtext], sysfonts [@R-sysfonts], and sjPlot [@sjPlot].
+
+# Data {#sec-data}
+
+## Overview
+
+This report analyzes three datasets sourced from Statistics Canada’s Census of Population and Labour Force Survey. We focus on 41 Canadian Census Metropolitan Areas (CMAs), as defined by Statistics Canada as one or more municipalities with a total population of at least 100,000 (Government of Canada, 2021). While Toronto, Montréal, and Vancouver represent the three largest urban CMAs in Canada, our dataset includes all major Canadian metropolitan areas, from global hubs to mid-sized economies. When merging datasets, we identified 41 CMAs with complete data across all datasets, determining our sample size. As reported by @governmentofcanada_2021_illustrated, the CMAs capture approximately 74% of the total Canadian population, ensuring high representation of the national labour market in our analysis. The data is structured as a panel dataset spanning 2023 and 2024. There were no missing values for these cities, allowing a consistent sample size of 82 observations.
+
+The datasets are provided as 3 distinct tables from Statistics Canada.
+
+-   Public Transit Data (2023–2024): Proportions of the population with access to transit based on proximity and demographic characteristics (Table 23-10-0313-01) [@canada2025access]
+
+-   Commute Data (2021): Average commuting durations by primary mode of transport (Table 98-10-0504-01) [@canada2023commuting]
+
+-   Labour Data (2023–2024): Seasonally adjusted monthly labour force characteristics (Table 14-10-0459-01) [@canada2025labour]
+
+#### Public Transit Data
+
+The Public Transit data provides the proportion of the population with access to public transport stops. In alignment with Canada’s sustainable development goals, the data helps monitor our progress toward Goal 11 for sustainable cities across Canada [@2021canada]. While transit accessibility is important to all, we aim to understand how it functions for the workforce. To focus on the active workforce, we filter the data to measure access for those aged 15 to 64. This ensures that our proportion represents the working-age population of Canada, excluding youth and seniors.
+
+*Key Variable: Transit Proximity Proportion*
+
+#### Commute Data
+
+The Commute data provides a breakdown of commuting statistics across Canada’s CMAs. This dataset describes average travel durations for various transportation modes across all 41 CMAs. The reported time period is only 2021. While the most recent data is only from the 2021 census, these values serve as a baseline for transit efficiency in each city.
+
+Ideally, we would report commuting statistics for the 2023-2024 study period. However, we use the 2021 data as a proxy, since transportation networks and the differences they can make in commuting are likely to change slowly over a short period. Historical data from the 2011, 2016, and 2021 Censuses show that average commuting durations for both public transit and private vehicles have fluctuated by less than two minutes over the past decade [@governmentofcanada_2023_commuting]. This suggests that our 2021 data is relatively accurate, and we do not expect the true commuting times to differ significantly in 2023 and 2024.
+
+*Key Variable: Commute Ratio*
+
+#### Labour Data
+
+The Labour dataset provides monthly labour force characteristics for each Canadian CMA. This table includes a key demographic control variable, Population size, as well as our main estimand in this report, the labour force participation rate. The monthly observations reported were seasonally adjusted by Statistics Canada, improving their comparability by accounting for seasonal variations and underlying trends. We averaged the observations from January to December to create an annual statistic for the years 2023 and 2024.
+
+*Key Variables: Population Size, Labour Force Participation Rate*
+
+## Variables
+
+To understand our key variables across Canadian CMAs in depth, Table 1 summarizes their distributions across the 2023 and 2024 periods. Following the table, we discuss our variables in depth, visualizing their distributions and finding their relevance. Variables such as transit access and labour rates were extracted as percentages to better compare urban areas with different populations.
+
+### Outcome Variable
+
+#### Participation Rate
+
+We applied a logarithmic transformation to the population variable to account for the heavy skew in city sizes. Normalizing the distribution ensures high-population outliers do not disproportionately influence the model.
+
+Studies vary in the estimands of interest they analyze, with some focusing on labour force participation [@bastiaanssen2020transport, @sanchez1999connection] and others on unemployment levels [@deboosere2019understanding, @foth2013equitable]. Participation rates were selected as the dependent variable over the unemployment rate to measure economic engagement broadly. Labour force rates measure a country’s active workforce, whereas unemployment rates exclude discouraged workers who have stopped looking for work [@hayes2022labor]. Given the possible exclusions from low unemployment rates, we are interested in examining participation, but both could be studied in future analyses.
+
+In @fig-participation found in Appendix @sec-data-details, the dependent variable, Labour Force Participation Rate, shows that the distributions have remained relatively stable across both years, with most CMAs hovering around 60% to 70%.
+
+### Predictor Variables
+
+#### Transit Access
+
+A key independent variable, Transit Access, measures the percentage of a CMA’s population living within 500 meters of a public transit stop. The metric shows that access varies across Canada, with most frequent levels clustering around 60% to 80% (@fig-transit found in Appendix @sec-data-details). The distribution remains quite the same across both years, which is plausible given that upgrades to transit infrastructure are typically slow and have long-term effects.
+
+#### Commute Ratio
+
+The Commute Ratio was constructed to measure the relative efficiency of public transit compared to private vehicle travel. @lunke2021public measure transit competitiveness using this formulation, evidencing another measure to consider for access to effective transit in urban cities.
+
+The ratio for commute times is calculated as:
+
+$$\text{Commute Ratio} = \frac{\text{Average Transit Commute Time (minutes)}}{\text{Average Private Vehicle Commute Time (minutes)}}$$
+
+For each CMA, the average transit user duration was divided by the average duration for car, truck, or van users. A ratio of 1 represents that the commutes are equal in time, while a ratio greater than 1 indicates that transit is more time-consuming. This variable enables the model to evaluate the relative time cost of sustainable transit compared to private transport.
+
+On average, commuting on transit takes 1.75 times longer than in a private vehicle. In the scatterplot @fig-commute, found in Appendix @sec-data-details, every observation lies above the equal-time line (red dashed line), indicating that transit is consistently the longer commuting option across all 41 CMAs. 
+
+#### Population
+
+The population size of each CMA is included in the analysis as a potential confounding variable. There is a slight growth in size within one year, but the standard deviations both largely exceed the mean, indicating a heavy right skew (@tbl-summary-stats). The disparity reflects that Canada's largest urban centres are disproportionately large compared to smaller centres. It is expected since cities like Toronto and Montreal are some of the highest in population density nationwide. Consequently, we applied a logarithmic transformation to the variable to mitigate the skew of high-population outliers. In @fig-population (found in Appendix @sec-data-details), we can see how the heavy right skew was handled moderately well by the logarithmic transformation. We normalize the distribution for further modelling to ensure outliers do not disproportionately influence the model.
+
+## Data Visualization
+
+### Variable Summaries
+
+@tbl-summary-stats displays descriptive statistics for the variables of our analysis. Participation rates and transit access proportions remain relatively consistent for both years, with varying degrees of variability.The population has also grown since 2023 and remains highly variable, indicating that a statistical transformation may be required for further analysis. @tbl-stats-commute measures average commute times, clearly displaying how  public transit commutes regularly take longer than commuting by car.
+
+```{r}
+#| label: tbl-summary-stats
+#| tbl-cap: "Descriptive Statistics by Year (2023-2024)"
+#| echo: false
+#| message: false
+#| warning: false
+
+options(modelsummary_factory_latex = "kableExtra")
+
+datasummary(
+  formula = `Participation Rate (%)` + `Transit Access (%)` + 
+            `Population (in thousands)` ~ 
+            Factor(Year) * (Mean + SD + Min + Max),
+  data = table_data,
+  fmt = 1)
+```
+
+
+```{r}
+#| label: tbl-stats-commute
+#| tbl-cap: "Descriptive Statistics for Commuting Times (2021)"
+#| echo: false
+#| message: false
+#| warning: false
+
+datasummary(
+  formula = `Commute by Transit (mins)` + `Commute by Car (mins)` + 
+            `Commute Ratio` ~ 
+            (Mean + SD + Min + Max),
+  data = table_data,
+  fmt = 1,
+  output = "kableExtra",
+  notes = "Note: Commute Ratio is based on 2021 Census data and serves as a baseline for both years") |>
+  column_spec(1, width = "5cm") |> 
+  column_spec(2:5, width = "2cm")
+```
+
+### Relationship Visualization
+
+The scatterplot in @fig-transit-vs-labour draws a consistent positive relationship between transit access and labour force participation across both years. Canada’s largest CMAs, such as Toronto and Montréal, are typically seen as having higher transit and participation rates, possibly suggesting that their immense size is a factor in labour outcomes. In a one-to-one variable analysis, the regression lines provide visual evidence of a potential relationship between transit access and work participation.
+
+```{r}
+#| label: fig-transit-vs-labour
+#| fig-cap: Relationship between Transit Access & Labour Participation Rates by Year
+#| echo: false
+#| message: false
+#| warning: false
+
+# Label the 2 largest Canadian CMAs
+label_data <- analysis_data |>
+  group_by(Year) |>
+  slice_max(order_by = Population, n = 2) |>
+  ungroup()
+
+ggplot(analysis_data, 
+       aes(x = Transit_Access_Prop, y = Participation_Rate)) +
+  geom_point(aes(size = Population), alpha = 0.6, color = "steelblue") + 
+  geom_smooth(method = "lm", se = FALSE, color = "maroon", linewidth = 0.5) +
+  geom_text_repel(data = label_data, 
+                  aes(label = CMA_Name),
+                  family = "lmroman",
+                  size = 3,
+                  show.legend = FALSE,
+                  box.padding = 1) + 
+  labs(x = "Proportion of 15-64 Population with Transit Access (%)",
+       y = "Labour Force Participation Rate (%)") +
+  scale_size(
+    name = "CMA Population (in Millions)", 
+    breaks = c(1000, 3000, 5000),
+    labels = function(x) x / 1000) +
+  facet_wrap(~Year) +
+  theme_bw(base_family = "lmroman") +
+  theme(
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold")
+  ) 
+```
+
+# Model
+
+In our analysis, we utilize a linear mixed-effects model to study the relationship between transit accessibility and labour participation, including other key predictors to evaluate it thoroughly.
+
+## Model Set-Up
+
+\begin{align*}
+y_{ij} = \beta_0 &+ \beta_1 \text{TransitAccess}_{ij} + \beta_2 \text{CommuteRatio}_{i} \\
+& + \beta_3 \log(\text{Population}_{ij}) + \beta_4 \text{Year}_{j} + \boldsymbol{b}_{0i} + \epsilon_{ij} 
+\end{align*}
+
+$$\text{where  } b_{0i} \sim N(0, \tau^2)  \text{  and  } \epsilon_{ij} \sim N(0, \sigma^2)$$
+
+where $i = 1, ... 41$ denotes the Census Metropolitan Area (CMA) and $j = 2023, 2024$ denotes the year.
+
+The response variable $y_{ij}$ denotes the participation rate for CMA $i$ in year $j$.
+
+The coefficients ($\beta_1, \beta_2, \beta_3 \text{ and } \beta_4$) represent the estimated effects in participation rate associated with changes corresponding to the predictor variables: Transit Access, Commute Ratio, log-transformed Population size and the transition to the Year 2024, respectively. 
+
+The fixed intercept $\beta_0$ represents the mean baseline participation rate for all predictors at zero in 2023. 
+The random intercept $\boldsymbol{b_{0i}}$ allows each CMA's baseline to deviate from the global mean, capturing unobserved characteristics that make a city's participation unique. The error term, assumed to be $\epsilon_{ij}$, captures the remaining unexplained variance. We assume $\boldsymbol{b}_{0i}$ and $\epsilon_{ij}$ are normally distributed.
+
+We use the `lme4` [@lme4] and `lmerTest` [@lmerTest] packages in R to run the model. The `lme4` package allows us to run a linear mixed-effects model with random effects, while the `lmerTest` package provides p-values for the included variables to determine significance. Model diagnostics, including assumption checks, are available in the supplementary materials (see Appendix @sec-model-details).
+
+## Model Considerations
+
+A linear mixed modelling (LMM) approach is selected for interpretability while also addressing our data and inference goals. In @deboosere2019understanding, the relationship between transit accessibility upgrades and labour outcomes in Toronto is studied using linear regression models. In another study, @boarnet2022opensource examines transit ridership and job access using ordinary least squares regression (OLS). However, the data we analyzed differ, implying that another approach is appropriate. While existing research has examined cross-sectional data [@boarnet2022opensource], we use a panel dataset with only two observations per CMA. OLS regression modelling is not selected because the available data violates the assumption of independence among observations. Furthermore, OLS would assume all unobserved CMA characteristics are uncorrelated with our predictors. This is highly unlikely in this context, as economic and geographic factors (such as Toronto's role as Canada's financial epicentre) would likely affect participation rates and transit development.
+
+A fixed-effects model estimates each CMA’s intercept independently, reducing the generalizability of our results for inference. While a fixed effects (FE) model usually controls for unobserved variables, such as a city's unique characteristics [@glaeser2001cities], these only utilize within-city variation. Given our data spanning only 2 years, transit infrastructure and population characteristics have not changed meaningfully, as described in our earlier variable analysis. A FE model will also ignore our constant characteristic of relative commute times represented in our model. Given that past data show that commute times remain relatively unchanged over short time spans, fixed effects would fall short here as well. The FE model would lack the statistical power to identify significant effects, essentially ignoring the valuable between-city differences.
+
+Infusing random effects into the model allows us to assume our 41 CMAs represent a sample of a broad population of urban centers. Following the methodology of @chen2021using, a linear mixed-effects model was selected because it accounts for the hierarchical nature of the data, in which observations are clustered within 41 CMAs. This approach accounts for differences across cities, ensuring that final estimates are not influenced by unobserved city-specific traits. Unlike fixed effects, which would underutilize any variable that does not change much over time, random effects allow us to see the impact of these traits, like the Commute Ratio, across the 41 CMAs.
+
+## Model Justification
+
+The variables selected for this linear mixed model are supported by data availability and existing research. We expect that increases in transit accessibility will see labour force outcomes trending positively. We are careful not to determine causality from model results, but understand that we may expect any association.
+
+Proximity to transit has been considered important for efficient public transit, alongside service frequency and various modes of public transportation.  Our measure of transit access is the proportion of the population with access to nearby transit. As established in previous studies, the relative distance to public transit provides effective and reliable transportation with various social and economic benefits [@deboosere2019understanding, @bastiaanssen2020transport]. Although proximity to transit, on its own, is often not enough to determine whether public transit is effective for its residents, it is included in several measures across studies.
+
+The inclusion of the Commute Ratio was based on how travel times can often affect employment and the ability to move around a city. As in @lunke2021public, the ratio provides a less biased metric than purely average transit times, since longer transit times are already associated with larger cities. Current research shows that, on average, using public transport takes longer than driving a car [@liao2020disparities]. The commute ratio variable aims to measure the efficiency gap between modes. This gap in public transit infrastructure could potentially be seen as a barrier to accessibility. Commuting times are often directly related to accessibility, as poor public transit and road infrastructure restrict efficient movement, including access to employment opportunities. @deboosere2018evaluating explores how access to employment has been linked with shorter commute times. Commuting itself can pose a substantial barrier to opportunities, particularly for those in low-wage employment sectors. In the context of public transit, we could expect that efficient public transit, compared to private vehicles, helps activate the labour force [@abrahams2024commuting]. This variable adds a new layer to accessibility, enabling us to determine how the current effectiveness of public transit could influence labour outcomes.
+
+Population size is included in the model to acknowledge that larger urban hubs are inherently associated with greater employment opportunities and public transit infrastructure. @sobieralski2021transportation discusses how population density has a strong direct effect on employment in major metropolitan areas. The idea that population growth may simply be an effect of employment growth is why we include the log-transformed population size variable to try to control for this confounding effect.  In our model, the statistical significance of this variable indicates whether size alone contributes to increases in participation in a CMA. To determine whether our primary predictors have an independent effect on labour outcomes, we are interested in results where population size is not the main driver. Modelling this way allows us to isolate the labour outcomes of a CMA apart from its size. 
+
+The year is treated as a dummy variable to account for national economic shifts that occurred between 2023 and 2024. Data were consistently available for both years, so it was the appropriate choice to include more data in the modelling for a detailed analysis of Canadian cities. While trends in transit accessibility remain relatively stable between the two years, economic outcomes can shift significantly from year to year. By including time as a dummy, we can determine whether the relationships we observed hold across the short time span or whether any changes observed are likely explained by unobserved confounding effects. This ensures that our estimates account for the impact of city-level predictors rather than merely reflecting national economic fluctuations.
+
+Adding a random intercept to the CMAs allows us to capture unobserved city-level character traits. Various socioeconomic factors in each city are assumed to influence participation rates, which justifies the inclusion of a random variable in our model [@sobieralski2021transportation]. Treating each CMA as a level of a random effect also allows the model to generalize results across all Canadian metropolitan contexts. Rather than examining these 41 cities as isolated cases, this approach treats them as a representative sample of urban centres, providing a more robust understanding of how transit accessibility affects labour outcomes in Canada.
+
+# Results
+
+Our results are summarized in @tbl-modelresults. Using our linear mixed model (LMM) approach, our regression analysis produced estimates of the predictors’ effects on the dependent variable, the labour force participation rate. Our table reports the coefficient estimates, their corresponding standard errors and p-values, which evaluate the significance of each predictor’s effect in the model.
+
+## Model Estimates
+
+```{r}
+#| label: tbl-modelresults
+#| echo: false
+#| message: false
+#| warning: false
+#| tbl-cap: Linear Mixed Effects Modelling Results
+#| tbl-height: 10
+#| tbl-width: 8
+
+# Clean labels for variables
+cm <- c(
+  '(Intercept)' = 'Constant',
+  'Transit_Access_Prop' = 'Transit Access (%)',
+  'Commute_Ratio' = 'Commute Ratio',
+  'Log_Population' = 'log(Population)',
+  'as.factor(Year)2024' = 'Year: 2024'
+)
+
+modelsummary(
+  list("Linear Mixed Model" = participation_model), 
+  coef_map = cm,
+  output = "kableExtra",
+  estimate = "estimate",
+  statistic = c("std.error", "p.value"),
+  shape = term ~ statistic,
+  fmt = 3,
+  stars = FALSE,
+  gof_map = c("nobs", "r2.marginal", "r2.conditional", "icc", "rmse", "aic")) |>
+  kable_styling(full_width = TRUE)
+```
+
+
+```{r}
+#| label: model-list
+#| echo: false
+#| message: false
+#| warning: false
+
+# Extract coefficients and p-values from  model
+model_summary <- summary(participation_model)
+model_estimates <- summary(model_summary)$coefficients
+model_values <- list(
+  # Coefficients
+  beta_access = round(model_estimates["Transit_Access_Prop", "Estimate"], 3),
+  beta_commute = round(model_estimates["Commute_Ratio", "Estimate"], 2),
+  beta_pop = round(model_estimates["Log_Population", "Estimate"], 2),
+  
+  # P-values
+  p_access = round(model_estimates["Transit_Access_Prop", "Pr(>|t|)"], 3),
+  p_commute = round(model_estimates["Commute_Ratio", "Pr(>|t|)"], 3),
+  p_pop = round(model_estimates["Log_Population", "Pr(>|t|)"], 3),
+  p_year = round(model_estimates["as.factor(Year)2024", "Pr(>|t|)"], 3)
+)
+```
+
+The results indicate that the independent variable’s coefficient, Transit Access proportion, was estimated to be `r model_values$beta_access` and was found to be moderately significant $p=$ `r model_values$p_access` Holding all other factors constant, a unit increase in the proportion of transit access is expected to raise participation rates by `r round(model_values$beta_access, 2)`\%.
+
+The estimate for Commute Ratio was found to be positive and significant (`r model_values$beta_commute`, $p=$ `r model_values$p_commute`), suggesting that, relative to private vehicles, increases in transit commute times have a positive effect on participation, which contradicts the expected economic benefits of transit efficiency.
+
+Our demographic variable, population size, was marginally significant ($p=$ `r model_values$p_pop`) in this model. The positive coefficient for log(Population) suggests that larger urban centres are slightly associated with higher participation levels. Furthermore, the effect of the Year 2024 was non-significant ($p=$ `r model_values$p_year`), indicating that the participation rates remained relatively stable over the study period.
+
+@fig-plotmodel shows the range of coeﬀicient estimates of our model with 95% confidence. We present the raw estimates to show how unit changes in a predictor shift the outcome, participation rates. The standardised estimates provide a fair comparison of variables on different scales, signifying which independent variables have a greater effect than others [@goldstein-greenwood2023shortcomings]. Our plot of standardized estimates suggests that, excluding time, our predictor variables equally influence the outcome, with the Commute Ratio being the leading driver of participation in the model.
+
+```{r}
+#| label: fig-plotmodel
+#| fig-cap: Coefficient Estimates from Model, Ranges of estimates within 95% confidence, presented raw and standardized
+#| fig-width: 6
+#| fig-height: 8
+#| echo: false
+#| message: false
+#| warning: false
+
+plot_labels <- c(
+  "Transit_Access_Prop" = "Transit Access (%)",
+  "Commute_Ratio" = "Commute Ratio (2021)",
+  "Log_Population" = "log(Population)",
+  "as.factor(Year)2024" = "Year 2024",
+  "as.factor(Year)0.993883734673619" = "Year: 2024"
+)
+
+formula_participation <- Participation_Rate ~ Transit_Access_Prop + Commute_Ratio + Log_Population + as.factor(Year) + (1 | CMA_ID)
+
+# 1. Raw Estimates 
+p1 <- plot_model(participation_model, 
+                 type = "est", 
+                 axis.labels = plot_labels, 
+                 show.values = TRUE,
+                 value.offset = 0.4,
+                 title = "Raw Coefficients") +
+  theme_bw(base_family = "lmroman") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# 2. Standardized Estimates
+p2 <- plot_model(participation_model, 
+                 type = "std", 
+                 axis.labels = plot_labels, 
+                 show.values = TRUE,
+                 value.offset = 0.4,
+                 prefix.labels = "none",
+                 title = "Standardized Coefficients") +
+  theme_bw(base_family = "lmroman") +
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  labs(caption = "* p < 0.05 (95% significance level) \n ** p < 0.01 (99% significance level)")
+
+p1 / p2 
+```
+
+## Random Effects
+
+The random effects component of the model captures the differences between metropolitan areas. @tbl-model_random presents the variance decomposition, directly from our model formulation.
+
+The Intra-class Correlation Coefficient (ICC), defined as the proportion of total variation in labour participation due to differences between the random effects’ levels, is 0.641. This indicates that approximately 64.1% of the total variance in labour participation is explained by differences among the CMAs. This provides evidence for including random intercepts, suggesting that observations within the same city are highly correlated and that city-level context matters for participation rates.
+
+```{r}
+#| label: tbl-model_random
+#| tbl-cap: Random Effects and its Variance Decomposition
+#| echo: false
+#| warning: false
+#| message: false
+
+# Variance Components
+var_comp <- as.data.frame(model_summary$varcor)
+tau_00 <- var_comp[var_comp$grp == "CMA_ID", "vcov"]
+sigma_2 <- var_comp[var_comp$grp == "Residual", "vcov"]
+
+# Calculate ICC
+calc_icc <- tau_00 / (tau_00 + sigma_2)
+
+random_effects_results <- data.frame(
+  "Parameter" = c("$\\tau_{00}$ (Between-City Variance)", 
+                  "$\\sigma^{2}$ (Within-City Variance)", 
+                  "ICC (Intra-class Correlation)"),
+  "Estimate" = c(round(tau_00, 3), 
+                 round(sigma_2, 3), 
+                 round(calc_icc, 3))
+)
+
+kable(random_effects_results, escape = FALSE)
+```
+
+
+## Model Performance
+
+The overall model fit is moderately strong, with a conditional $R^2$ of 0.785, meaning 78% of the total variation in the outcome is explained when both fixed effects and CMA-specific intercepts are considered. This reportedly decent explanatory power is complemented by a Root Mean Square Error (RMSE) of 1.54. The RMSE is relatively low, showing the average deviation between observed and predicted participation rates.
+
+@mangiafico_2016_r outlines a method to formally test the random effects within a mixed effects model. With our model, the random-effect term is removed to run likelihood ratio tests on the model reductions. Based on the Likelihood Ratio Test (LRT) presented in @tbl-model-test, the inclusion of random intercepts results in a highly significant improvement in model fit, compared to modelling without them. This agrees with our approach that using approaches such as ordinary least squares would not be the most appropriate.
+
+```{r}
+#| label: tbl-model-test
+#| tbl-cap: Testing Random Effects using a Likelihood Ratio Test for City-Level Random Effects
+#| echo: false
+#| warning: false
+#| message: false
+
+model_data <- analysis_data
+ranova_df <- as.data.frame(ranova(participation_model))
+rownames(ranova_df) <- c("Full Model", "Reduced Model (No Random Effects)")
+
+ranova_df |>
+  kable(
+    output = "kableExtra",
+    booktabs = TRUE,
+    col.names = c("N. Par", "Log-Likelihood", "AIC", "LRT Statistic", "df", "p-value"),
+    align = "c",
+    digits = 3
+  )
+```
+
+
+# Discussion
+
+While existing research has examined the links between public transport access and economic outcomes in urban metropolises, the generalization of these relationships depends on the context and data used. Rather than isolating to large cities, we explored this relationship across 41 major cities to assess the broader Canadian urban landscape. Using a linear mixed effects model to account for unobserved city traits, we estimate the effects of our predictors on participation rates.
+
+
+## Relationship between Transit Access and Labour Participation
+
+A primary finding from our linear mixed model is the positive relationship between transit accessibility and labour force participation. A 1% increase in transit accessibility for the working-age population is associated with a 0.089% increase in labour participation.  While this is a small estimate, the positive coefficient indicates that transit can enable workforce engagement. Competitive transit accessibility has been associated with higher incomes and employment levels. The foundation for this link has been established in previous research, which shows that accessibility can be measured by proximity to bus stops. 
+
+Our model’s high variance in the random intercepts, and its related metric, the intraclass correlation coefficient, confirm that a significant portion of variation in participation levels is tied to city-specific contexts [@bonin2025whats]. A city’s characteristics, size, density, built environment, and the spatial structure of its region contribute to all facets of its operation. This validates the value of existing research, which shows that major urban cities like Toronto are distinct in terms of job accessibility, with details on proximity and commutes to job opportunities [@deboosere2019understanding].
+
+While this isolated city effect may be observed across Canada, the significance of the Transit Access variable across the entire panel suggests a persistent national trend. It is highly unlikely to determine causality here, but this study makes progress in highlighting the economic value of public transportation. Furthermore, the time variable suggests a minor decrease in labour participation over the study period. However, it was found to be insignificant, suggesting that a time-driven trend is missing. This strengthens our results, as we now expect the national trend observed is not simply due to inherent changes over a year.
+
+In connection with further research, the idea that spatial distance and a lack of connection to employment reflect a loss of employment in areas is known as the spatial mismatch phenomenon [@wang2022review]. While several studies have pursued testing this hypothesis, our results indicate that connections via public transit can support urban cities. In @allen2019sizing, they found that marginalised populations living in regions lacking effective transit hinder their economic success. While our study looks at Canada as a whole, the specific characteristics of a city and its transit-related issues can determine how transit accessibility better serves specific groups.
+
+## Economic Agglomeration: Commuting Times and Population on Labour Participation
+
+An unexpected finding from our model is the sign and effect of the Commute Ratio on labour participation. The large and statistically significant coefficient (6.33, p=0.004) indicates that, for each additional unit increase in the commute ratio, the labour participation rate increases by 6.33%. This suggests that labour force participation is higher in cities where transit commutes are significantly longer than car commutes. It is expected that commuting via public transit will take longer than by car [@lunke2021public]. However, this is counterintuitive to our thinking that commuting acts as a significant barrier to employment opportunities. The issue could arise because transit, even if inefficient, may be the only option to reach employment, which may explain why it drives the outcome here.
+
+Research does exist on our expectations for commuting, showing that longer commutes are viewed as a deterrent rather than a motivator for economic outcomes @bastiaanssen2020transport and @martín-barroso2022workers examine how longer commute times act as a barrier to employment and exist in areas with higher unemployment, particularly for low-wage workers whose labour participation increases when travel times are reduced. However, some findings suggest a contradiction: longer commutes can actually correlate with more stable employment, as workers travel farther for better opportunities.
+
+Although time-consuming, cities with large transit commuting times could actually account for the effect of big cities. In major Canadian hubs like Toronto, Montreal and Vancouver, transit commutes are often much longer than driving due to distance and congestion, yet these cities also have robust labour markets. High-density employment areas that require long transit commutes to access exist in these large cities, suggesting that this commute ratio does not necessarily imply that longer commutes drive participation, but rather that major transit use is key to a successful economy.
+
+#### Agglomeration
+
+@venables2007evaluating highlights how productivity gains from urban transport improvements arise from agglomeration economies. A major field in economics, agglomeration economies are the benefits of busy urban cities. In our context, the commute ratio supports the idea that longer transit commute times are correlated with highly dense centres within a city, which already have positive effects on the economy. This aligns with @chatman2014transit, @chatman2011public, and @melo2018transportinduced, who argue that public transit improvements may increase economic productivity by enabling the growth and density of urban centres. Public transport improvements may increase economic productivity by enabling the growth and densification of cities, downtowns, or industrial clusters, boosting external agglomeration economies. ​Results of the commuting ratio align with the idea of agglomeration, and it has been argued that the potential agglomeration benefits are substantial.
+
+Our population size variable also provides evidence for this idea. Our model found that as population size increases, participation rates increase as well. Population density can significantly affect a region's productivity and employment, reflecting the effects of economic agglomeration [@sobieralski2021transportation]. Though not as significant an effect as commuting, this indicates that urban agglomeration is occurring in larger, dense cities, which are then tied to better economic outcomes. 
+
+The issue with these predictors is that external factors are driving the outcome, highlighting a key limitation of these models.
+
+## Limitations: Endogeneity and Modelling Constraints
+
+#### Endogeneity
+
+Our study suffers from a significant endogeneity problem among our independent variables. Endogeneity may result from omitting variables that explain the independent variable, and when the causal interpretation of the variables is confounded [@antonakis2010making]. In @carlos2014public, he explores how improvements to public transport are endogenous. Studies have examined an entirely reverse association, such as the impact of employment growth on travel times to work [@morrison2016employment]. While the linear mixed model accounted for city-level variation, our study is susceptible to endogeneity between transit infrastructure and economic outcomes.
+
+As @carlos2014public demonstrates in his study of Bogotá, the Colombian capital, public transport improvements are often endogenous. Transit stops are often located in areas with high employment density and income levels. In the Canadian context, this suggests a reverse-causality problem: it is not certain that the 1% increase in transit access drives participation, or that transit investment is high in CMAs that already exhibit high workforce engagement. 
+
+We must clarify that any relationship found here is purely associative and not causal, and that its results could be affected by missing variables that confound this relationship. @bastiaanssen2020transport covers several existing studies that have not accounted for endogeneity, which then should always be considered when interpreting the results. Several research studies use the number of jobs accessible to regions, the frequency of transit service and other metrics to determine true public transport accessibility [@lachapelle2023breaking].
+
+#### Data and Modelling Limitations
+
+The short time span of our dataset is also a key limitation on the generalizability of our results. Due to the availability of only the most recent data, our analysis fails to account for structural changes that could occur in transit infrastructure over a longer period. @deboosere2019understanding analysed transit accessibility over a decade in Toronto (2001 to 2011), highlighting how changes in unemployment and income during that period are associated with public transit access when controlling for external variables. The insignificance of the Year effect indicates that little changed economically between these two years. While it benefits our analysis that the relationship remained stable across the two years, it could be useful to capture longer-term changes and include more time periods in a panel dataset.
+
+Model selection is also difficult in this context. Given the small panel dataset, options from OLS, fixed effects, and random effects were all considered. While the LMM was chosen for its ability to handle  differences across cities, it does not fully address endogeneity. This study assumes that the city-specific random effects are uncorrelated with the independent variables. As @carlos2014public highlights, urban planning may already revolve around highly engaged transit areas, so when this assumption is violated, the model suffers and its inferences are less reliable.
+
+## Policy Implications and Future Directions
+
+The study's evidence demonstrates an association between transit accessibility and economic outcomes. The statistical significance of the independent variables here suggests that, across the 41 Canadian CMAs studied, physical proximity to transit can be instrumental in maximizing workforce potential. Policies advocating for dedicated investment in transportation infrastructure are partially supported here.​ The expansion of public transport can lead to successful economic outcomes, but the complexity of factors such as employment and participation makes guarantees impossible [@boisjoly2017informality, @bastiaanssen2020transport]. Outside of transport supply, education, skills, and types of employment opportunities are largely absent from modelling approaches. 
+
+A future direction for further inquiry is stratifying transit users by income level. As @boisjoly2017informality and @deboosere2019understanding suggest, the statistical significance of transit access is often concentrated among low-wage workers who lack access to private vehicles. Increases in transit access are associated with greater economic growth for these groups. Future research can model these socio-economic tiers separately, ensuring that transit policies are tailored to support the users of greatest need. Transit investment can enable productivity gains by creating dense urban centres, which we have found are all associated with increased labour participation. In urban planning and policymaking, transit can go beyond being a public service to becoming a vital tool for marginalised populations.
+
+We should also consider incorporating a variety of accessibility measures beyond proximity to transit stops, such as service frequency, reliability, and transit modes, as noted by @sharifiasl2024assessing. Refining these metrics by including more data enables greater modelling of these relationships and more accurate quantification of accessibility. With more available data, the formulation of future models should be carefully considered based on the context. In general, the inclusion of more detailed panel data would strengthen the model's validity and provide more flexibility in model selection.
+
+\newpage
+
+\appendix
+
+# Appendix {.unnumbered}
+
+# Data {#sec-data-details}
+
+## Visual Distributions of Variables
+
+```{r}
+#| label: fig-participation
+#| fig-cap: Distribution of Labour Force Participation Rates across 41 Canadian CMAs
+#| fig-height: 3
+#| fig-width: 6
+#| echo: false
+#| message: false
+#| warning: false
+
+plot_participation <- ggplot(analysis_data, aes(x = Participation_Rate, fill = Year)) +
+  geom_histogram(color = "white", bins = 10) +
+  scale_fill_manual(values = c("2023" = "steelblue", "2024" = "salmon")) +
+  facet_wrap(~Year) +
+  labs(x = "Participation Rate (%)", 
+       y = "Frequency") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    strip.text = element_text(face = "bold", size = 12),
+    text = element_text(family = "lmroman"),
+    legend.position = "none")
+plot_participation
+```
+
+```{r}
+#| label: fig-transit
+#| fig-cap: Distribution of Access to Nearby Transit Proportions across 41 Canadian CMAs
+#| fig-height: 3
+#| fig-width: 6
+#| echo: false
+#| message: false
+#| warning: false
+
+plot_transit <- ggplot(analysis_data, aes(x = Transit_Access_Prop, fill = Year)) +
+  geom_histogram(color = "white", bins = 10) +
+  scale_fill_manual(values = c("2023" = "steelblue", "2024" = "salmon")) +
+  facet_wrap(~Year) +
+  labs(x = "Transit Access Proportion (%)", 
+       y = "Frequency") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    strip.text = element_text(face = "bold", size = 12),
+    text = element_text(family = "lmroman"),
+    legend.position = "none"
+  )
+plot_transit
+```
+
+```{r}
+#| label: fig-commute
+#| fig-cap: Comparison of Commute Times by Mode of Transport
+#| fig-height: 3
+#| fig-width: 6
+#| echo: false
+#| message: false
+#| warning: false
+
+# Calculates maximum value of variables, to make scatterplot more readable
+max_val <- max(c(analysis_data_2024$Avg_Commute_Car, analysis_data_2024$Avg_Commute_Transit), na.rm = TRUE) * 1.1
+
+plot_commmute <- ggplot(analysis_data_2024, aes(x = Avg_Commute_Car, y = Avg_Commute_Transit)) +
+  geom_point(size = 3) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  coord_cartesian(xlim = c(0, max_val), ylim = c(0, max_val)) +
+  labs(x = "Average Car Commute (min)",
+       y = "Average Transit Commute (min)",
+       caption = "Note: Red dashed line indicates when Private Vehicle and Transit commutes are equal") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 12),
+    plot.caption = element_text(hjust = 0.5, size = 10), 
+    text = element_text(family = "lmroman")
+  )
+plot_commmute
+```
+
+```{r}
+#| label: fig-population
+#| fig-cap: Distribution of Population Sizes across 41 Canadian Census Metropolitan Areas, Raw and Log-Transformed
+#| fig-subcap: Population sizes in 2024 are displayed.
+#| echo: false
+#| fig-height: 3
+#| fig-width: 6
+#| message: false
+#| warning: false
+
+# 1. Histogram of Raw Population
+p1 <- ggplot(analysis_data_2024, aes(x = Population)) +
+  geom_histogram(fill = "gray", color = "white", bins = 10) +
+  labs(title = "Population", x = "Population Size (in thousands)") +
+  theme_bw(base_family = "lmroman") +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
+# 2. Histogram of Log-Transformed Population
+p2 <- ggplot(analysis_data_2024, aes(x = Log_Population)) +
+  geom_histogram(fill = "darkblue", color = "white", bins = 10) +
+  labs(title = "Normalized Log Population", x = "Log(Population)") +
+  theme_bw(base_family = "lmroman") +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
+plot_population <- p1 + p2
+plot_population
+```
+
+
+
+# Model Diagnostics {#sec-model-details}
+
+We examine diagnostic plots and statistical tests to assess how well the linear mixed models satisfy core assumptions, ensuring their results are valid [@ushakova2025chapter]. The package `sjPlot` [@sjPlot] allows us to create graphs to assess our assumptions.
+
+In @schielzeth2020robustness, they discuss the remarkable robustness of mixed-effects models even if the distributional assumptions are objectively violated. Keeping this in mind, we carefully assess the assumptions below.
+
+```{r}
+#| eval: true
+#| echo: false
+#| message: false
+#| warning: false
+#| label: fig-diagnostics
+#| fig-cap: "Model Diagnostics: (A) Residuals Check (Q-Q Plot), (B) Random Effects, (C) Linearity and Homoscedasticity Check, (B) Residuals Check (Q-Q Plot), (D) Variance Inflation Factors"
+#| fig-width: 10
+#| fig-height: 8
+
+# Plots
+diag_plots <- plot_model(participation_model, type = "diag")
+
+p1 <- diag_plots[[1]] + labs(title = "Normality of Residuals")
+p2 <- diag_plots[[2]][[1]] + labs(title = "Normality of Random Effects")
+p3 <- diag_plots[[4]] + labs(title = "Linearity and Constant Variance Check")
+
+# VIF Table
+vif_data <- data.frame(VIF = car::vif(participation_model))
+plot_labels <- c(
+  "Transit_Access_Prop" = "Transit Access (%)",
+  "Commute_Ratio"       = "Commute Ratio",
+  "Log_Population"      = "log(Population)",
+  "as.factor(Year)" = "Year 2024"
+)
+
+vif_data$VIF <- round(vif_data$VIF, 2)
+rownames(vif_data) <- plot_labels[rownames(vif_data)]
+vif_data$Variable <- rownames(vif_data)
+vif_data <- vif_data[, c("Variable", "VIF")] # Reorder for display
+
+table_theme <- ttheme_default(
+  base_size = 20,
+  base_family = "lmroman")
+
+p4 <- tableGrob(vif_data, rows = NULL, theme = table_theme)
+
+(p1 + p2) / (p3 + p4) +  plot_annotation(tag_levels = 'A')
+```
+
+#### Normality of the residuals
+
+@fig-diagnostics **A**: The Q-Q plot shows that while the residuals are relatively centred at 0, deviations from the tails suggest a possible violation of normality. Extreme observations may be skewing the normality assumption.
+
+#### Normality of Random Effects
+
+@fig-diagnostics **B**: As specified in our model formulation, the random effects are assumed to follow a normal distribution. Based on the Q-Q plot, the dots lie closely along the diagonal line, satisfying the assumption of normality.
+
+#### Linearity and Homoscedasticity
+
+@fig-diagnostics **C**: The modeled relationship appears to be loosely linear, as the residuals seem to bounce randomly around the 0 line. However, the plot suggests potential evidence of non-constant variance. The line is trending upwards rather than horizontally, with no outliers at either end of the fitted values range. Robust alternatives beyond this analysis could be considered to handle the violation.
+
+#### Multicolinearity
+
+@fig-diagnostics **D**: To test for multicollinearity, the Variance Inflation Factor (VIF) values indicate that it is not a concern for this model. All predictors are below a standard collinearity threshold of under 5, ranging from 1 to 2. This helps ensure that variables do not significantly overlap in the model.
+
+#### Independence of the random effects versus covariates (Lack of endogeneity)
+
+In linear mixed-effects modelling with random effects, the issue of endogeneity arises when evaluating the assumption of random-effects independence from covariates. When predictor variables in a model are correlated with the error term due to unexplained factors, this creates endogeneity and may violate the modelling assumptions. @boisjoly2017informality discusses the possibility that public transport variables may be correlated with unobserved factors, such as reverse causality or omitted-variable bias. This bias can occur when covariates that are not included in the regression are actually correlated and significant to the model. In our context, transit access may be built around pre-existing high employment density. Consequently, the relationship between transit access and participation could be reversed, meaning that if our model identifies strong correlations, causality must be interpreted with caution. We acknowledge this potential endogeneity as a limitation of this paper, requiring additional data or alternative inference methods to address these issues.
+
+\newpage
+
+# References
