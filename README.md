@@ -2,16 +2,7 @@
 
 ## Overview
 
-
-This repository contains the code and data used to analyse public transit accessibility across Canadian metropolitan cities, with data  sourced from Statistics Canada. Using a linear mixed-effects model to account for city-specific differences, the study analyzes the impact of transit proximity, population size, and relative commute times in 2023 and 2024.
-
-To reproduce the analysis, please follow these steps:
-1. Clone the repository to your local machine.
-2. Ensure you have the required dependencies installed. You can find these in the `scripts/requirements.txt` file for Python and the `paper/_quarto.yml` file for R/Quarto.
-3. Run the data cleaning scripts located in the `scripts/` directory to process the raw data.
-4. Execute the modeling scripts to fit the linear mixed-effects model.
-5. Finally, render the Quarto document in the `paper/` directory to generate the final report.
-
+This repository contains the code and data used to analyse public transit accessibility across Canadian metropolitan cities, with data sourced from Statistics Canada. Using a linear mixed-effects model to account for city-specific differences, the study analyzes the impact of transit proximity, population size, and relative commute times in 2023 and 2024.
 
 ## File Structure
 
