@@ -2,7 +2,7 @@
 title: "An Analysis of Public Transit Accessibility on Labour Force Outcomes across Major Canadian Cities from 2023-2024"
 author: Arusan Surendiran
 thanks: "Code and data are available at: [https://github.com/arusansurendiran/CanadianAccessibilityEmployment.git](https://github.com/arusansurendiran/CanadianAccessibilityEmployment.git)."
-date: today
+date: December 26, 2026
 date-format: long
 abstract: "This paper addresses the relationship between public transit accessibility and labour force participation rates across 41 Canadian metropolitan areas. Using a linear mixed-effects model to account for city-specific differences, the study analyzes the impact of transit proximity, population size, and relative commute times in 2023 and 2024. The results show a statistically significant positive association between transit access and labour participation. Interestingly, long transit commutes were positively correlated with higher participation, suggesting that densely populated areas thrive economically. While confounding effects prevent establishing causality, the evidence supports positive, measurable socioeconomic impacts of public transportation."
 format: pdf
