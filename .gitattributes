@@ -1,10 +1,8 @@
-# Ignore all TeX files in the repository
-*.tex linguist-vendored
-*.sty linguist-vendored
-*.cls linguist-vendored
+# Catch all TeX files in any directory
+**/*.tex linguist-vendored
+**/*.sty linguist-vendored
+**/*.cls linguist-vendored
+**/*.bib linguist-vendored
 
-# Specifically ignore  LLM usage folder
-other/llm_usage/* linguist-documentation
-
-# Ignore the generated library files
-site_libs/* linguist-vendored
+# Alternatively, just mark the entire paper folder as documentation
+paper/* linguist-documentation
