@@ -3,6 +3,3 @@
 **/*.sty linguist-vendored
 **/*.cls linguist-vendored
 **/*.bib linguist-vendored
-
-# Alternatively, just mark the entire paper folder as documentation
-paper/* linguist-documentation
