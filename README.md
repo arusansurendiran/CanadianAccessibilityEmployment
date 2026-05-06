@@ -33,4 +33,4 @@ In R:
 
 ## Statement on LLM usage
 
-Aspects of the code and paper were written with the help of the Google Gemini and GitHub Copilot autocomplete. The complete chat history is available in other/llm_usage/gemini-usage.txt.
+Aspects of the code and paper were written with the help of the Google Gemini and GitHub Copilot autocomplete. The complete chat history is available in `other/llm_usage/gemini-usage.txt`.
